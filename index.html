@@ -215,7 +215,7 @@
             if (++loaded === TOTAL_FRAMES) resolve();
           };
           img.onerror = () => console.error(`Missing: images/${IMAGE_PREFIX}${i}.${IMAGE_EXT}`);
-          img.src = `images/${IMAGE_PREFIX}${i}.${IMAGE_EXT}`;
+          img.src = `${IMAGE_PREFIX}${i}.${IMAGE_EXT}`;
         }
       });
     }

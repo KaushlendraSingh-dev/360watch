@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&display=swap" rel="stylesheet">
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>360° Watch Viewer | Premium View</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: linear-gradient(to bottom right, #f7f6f2, #ffffff);
+      color: #333;
+      font-family: 'Playfair Display', serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      font-size: 2.8rem;
+      color: #b08d57; /* gold tone */
+      margin-bottom: 12px;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    p.description {
+      max-width: 700px;
+      text-align: center;
+      color: #666;
+      font-size: 1.1rem;
+      margin-bottom: 40px;
+      line-height: 1.7;
+    }
+
+    .viewer-container {
+      position: relative;
+      width: 90vw;
+      max-width: 500px;
+      aspect-ratio: 1/1;
+      background: #fff;
+      border-radius: 20px;
+      border: 1px solid #ddd;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      transition: all 0.3s ease-in-out;
+    }
+
+    #viewer {
+      width: 100%;
+      height: 100%;
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+      cursor: grab;
+      border-radius: 20px;
+      transition: background-image 0.1s ease-in-out;
+    }
+
+    #position-indicator {
+      position: absolute;
+      width: 108%;
+      height: 108%;
+      top: -4%;
+      left: -4%;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .position-dot {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      background: rgba(180, 180, 180, 0.2);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: all 0.2s ease;
+    }
+
+    .position-dot.active {
+      background: #b08d57;
+      transform: translate(-50%, -50%) scale(1.4);
+      box-shadow: 0 0 10px #b08d57aa;
+    }
+
+    .navigation-bar {
+      width: 90vw;
+      max-width: 500px;
+      height: 12px;
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 10px;
+      margin-top: 25px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .navigation-handle {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: #b08d57;
+      border-radius: 50%;
+      top: 50%;
+      left: 0;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      box-shadow: 0 0 12px rgba(176, 141, 87, 0.6);
+      transition: left 0.2s ease;
+    }
+
+    #loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #777;
+      font-size: 16px;
+      z-index: 10;
+    }
+
+    @media (max-width: 500px) {
+      h1 {
+        font-size: 2.2rem;
+      }
+      p.description {
+        font-size: 1rem;
+      }
+    }
+
+    p.description {
+  max-width: 700px;
+  text-align: center;
+  color: #444;
+  font-size: 1.15rem;
+  margin-bottom: 24px;
+  line-height: 1.8;
+}
+
+@media (max-width: 600px) {
+  p.description {
+    font-size: 1rem;
+    padding: 0 10px;
+  }
+}
+
+  </style>
+</head>
+<body>
+  <h1>360° Watch Viewer</h1>
+
+  <p class="description">
+  Welcome to the <strong>360° Luxury Watch Viewer</strong> — an immersive experience built to showcase premium timepieces in exquisite detail.
+  This viewer allows you to drag and rotate the watch model to explore every curve, material, and element of craftsmanship from all angles.
+</p>
+
+<p class="description">
+  The featured model in this demonstration is inspired by the unmatched elegance and engineering of <strong>Richard Mille</strong> timepieces — a brand that defines the pinnacle of haute horology.
+</p>
+
+<p class="description">
+  We extend our <strong>sincere thanks and respect</strong> to <a href="https://www.richardmille.com/" target="_blank" style="color:#b08d57; text-decoration: none; font-weight: bold;">Richard Mille</a> for setting the gold standard in modern watchmaking.
+  This viewer pays tribute to the innovation and luxury their watches represent.
+</p>
+
+
+  <div class="viewer-container">
+    <div id="viewer"></div>
+    <div id="position-indicator"></div>
+    <div id="loading">Loading Watch...</div>
+  </div>
+
+  <div class="navigation-bar">
+    <div class="navigation-handle"></div>
+  </div>
+
+  <script>
+    const TOTAL_FRAMES = 28;
+    const IMAGE_PREFIX = 'w';
+    const IMAGE_EXT = 'png';
+    const DRAG_SENSITIVITY = 0.3;
+
+    const viewer = document.getElementById('viewer');
+    const loadingText = document.getElementById('loading');
+    let currentFrame = 0;
+    let isDragging = false;
+    let startX = 0;
+    let images = [];
+    let lastRenderedFrame = -1;
+
+    init();
+
+    async function init() {
+      await preloadImages();
+      createDots();
+      loadingText.style.display = 'none';
+      updateView();
+    }
+
+    function preloadImages() {
+      return new Promise((resolve) => {
+        let loaded = 0;
+        for (let i = 1; i <= TOTAL_FRAMES; i++) {
+          const img = new Image();
+          img.onload = () => {
+            images[i - 1] = img;
+            if (++loaded === TOTAL_FRAMES) resolve();
+          };
+          img.onerror = () => console.error(`Missing: images/${IMAGE_PREFIX}${i}.${IMAGE_EXT}`);
+          img.src = `images/${IMAGE_PREFIX}${i}.${IMAGE_EXT}`;
+        }
+      });
+    }
+
+    function createDots() {
+      const indicator = document.getElementById('position-indicator');
+      indicator.innerHTML = '';
+      for (let i = 0; i < TOTAL_FRAMES; i++) {
+        const angle = (i / TOTAL_FRAMES) * Math.PI * 2;
+        const dot = document.createElement('div');
+        dot.className = 'position-dot';
+        dot.style.left = `${50 + Math.cos(angle) * 46}%`;
+        dot.style.top = `${50 + Math.sin(angle) * 46}%`;
+        indicator.appendChild(dot);
+      }
+    }
+
+    function updateView() {
+      const frameNum = Math.round(currentFrame) % TOTAL_FRAMES;
+      if (frameNum === lastRenderedFrame) return;
+      viewer.style.backgroundImage = `url('${images[frameNum].src}')`;
+      document.querySelectorAll('.position-dot').forEach((dot, i) => {
+        dot.classList.toggle('active', i === frameNum);
+      });
+      document.querySelector('.navigation-handle').style.left =
+        `${(frameNum / TOTAL_FRAMES) * 100}%`;
+      lastRenderedFrame = frameNum;
+    }
+
+    function handleStart(clientX) {
+      isDragging = true;
+      startX = clientX;
+      viewer.style.cursor = 'grabbing';
+    }
+
+    function handleMove(clientX) {
+      if (!isDragging) return;
+      const dx = clientX - startX;
+      startX = clientX;
+      currentFrame = (currentFrame + dx * DRAG_SENSITIVITY + TOTAL_FRAMES) % TOTAL_FRAMES;
+      requestAnimationFrame(updateView);
+    }
+
+    function handleEnd() {
+      isDragging = false;
+      viewer.style.cursor = 'grab';
+      currentFrame = Math.round(currentFrame);
+      updateView();
+    }
+
+    viewer.addEventListener('mousedown', (e) => handleStart(e.clientX));
+    document.addEventListener('mousemove', (e) => handleMove(e.clientX));
+    document.addEventListener('mouseup', handleEnd);
+
+    viewer.addEventListener('touchstart', (e) => {
+      handleStart(e.touches[0].clientX);
+      e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener('touchmove', (e) => {
+      handleMove(e.touches[0].clientX);
+      e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener('touchend', handleEnd);
+
+    document.querySelector('.navigation-bar').addEventListener('click', (e) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const percent = (e.clientX - rect.left) / rect.width;
+      currentFrame = Math.round(percent * TOTAL_FRAMES);
+      updateView();
+    });
+  </script>
+</body>
+</html>
+

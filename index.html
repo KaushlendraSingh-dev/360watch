@@ -279,15 +279,13 @@ main {
     document.addEventListener('mousemove', (e) => handleMove(e.clientX));
     document.addEventListener('mouseup', handleEnd);
 
-    viewer.addEventListener('touchstart', (e) => {
-      handleStart(e.touches[0].clientX);
-      e.preventDefault();
-    }, { passive: false });
+  viewer.addEventListener('touchstart', (e) => {
+  handleStart(e.touches[0].clientX);
+}, { passive: true });
 
-    document.addEventListener('touchmove', (e) => {
-      handleMove(e.touches[0].clientX);
-      e.preventDefault();
-    }, { passive: false });
+document.addEventListener('touchmove', (e) => {
+  handleMove(e.touches[0].clientX);
+}, { passive: true });
 
     document.addEventListener('touchend', handleEnd);
 

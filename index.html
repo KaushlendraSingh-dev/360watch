@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&display=swap" rel="stylesheet">
-
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>360° Watch Viewer | Premium View</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&display=swap" rel="stylesheet">
   <style>
     * {
       box-sizing: border-box;
@@ -14,47 +13,46 @@
     }
 
     body {
-  background: linear-gradient(to bottom right, #f7f6f2, #ffffff);
-  color: #333;
-  font-family: 'Playfair Display', serif;
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-}
+      background: linear-gradient(to bottom right, #f7f6f2, #ffffff);
+      color: #333;
+      font-family: 'Playfair Display', serif;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
 
-main {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 40px 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-
+    main {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
     h1 {
       font-size: 2.8rem;
-      color: #b08d57; /* gold tone */
+      color: #b08d57;
       margin-bottom: 12px;
       letter-spacing: 1px;
       font-weight: 600;
+      text-align: center;
     }
 
     p.description {
       max-width: 700px;
       text-align: center;
-      color: #666;
-      font-size: 1.1rem;
-      margin-bottom: 40px;
-      line-height: 1.7;
+      color: #444;
+      font-size: 1.15rem;
+      margin-bottom: 24px;
+      line-height: 1.8;
     }
 
     .viewer-container {
       position: relative;
       width: 90vw;
       max-width: 500px;
-      aspect-ratio: 1/1;
+      aspect-ratio: 1 / 1;
       background: #fff;
       border-radius: 20px;
       border: 1px solid #ddd;
@@ -72,6 +70,7 @@ main {
       cursor: grab;
       border-radius: 20px;
       transition: background-image 0.1s ease-in-out;
+      touch-action: pan-y; /* allow vertical scroll, disable horizontal swipe */
     }
 
     #position-indicator {
@@ -135,61 +134,46 @@ main {
       z-index: 10;
     }
 
-    @media (max-width: 500px) {
+    @media (max-width: 600px) {
       h1 {
         font-size: 2.2rem;
       }
+
       p.description {
         font-size: 1rem;
+        padding: 0 10px;
       }
     }
-
-    p.description {
-  max-width: 700px;
-  text-align: center;
-  color: #444;
-  font-size: 1.15rem;
-  margin-bottom: 24px;
-  line-height: 1.8;
-}
-
-@media (max-width: 600px) {
-  p.description {
-    font-size: 1rem;
-    padding: 0 10px;
-  }
-}
-
   </style>
 </head>
 <body>
-    <main>
-  <h1>360° Watch Viewer</h1>
+  <main>
+    <h1>360° Watch Viewer</h1>
 
-  <p class="description">
-  Welcome to the <strong>360° Luxury Watch Viewer</strong> — an immersive experience built to showcase premium timepieces in exquisite detail.
-  This viewer allows you to drag and rotate the watch model to explore every curve, material, and element of craftsmanship from all angles.
-</p>
+    <p class="description">
+      Welcome to the <strong>360° Luxury Watch Viewer</strong> — an immersive experience built to showcase premium timepieces in exquisite detail.
+      This viewer allows you to drag and rotate the watch model to explore every curve, material, and element of craftsmanship from all angles.
+    </p>
 
-<p class="description">
-  The featured model in this demonstration is inspired by the unmatched elegance and engineering of <strong>Richard Mille</strong> timepieces — a brand that defines the pinnacle of haute horology.
-</p>
+    <p class="description">
+      The featured model in this demonstration is inspired by the unmatched elegance and engineering of <strong>Richard Mille</strong> timepieces — a brand that defines the pinnacle of haute horology.
+    </p>
 
-<p class="description">
-  We extend our <strong>sincere thanks and respect</strong> to <a href="https://www.richardmille.com/" target="_blank" style="color:#b08d57; text-decoration: none; font-weight: bold;">Richard Mille</a> for setting the gold standard in modern watchmaking.
-  This viewer pays tribute to the innovation and luxury their watches represent.
-</p>
+    <p class="description">
+      We extend our <strong>sincere thanks and respect</strong> to <a href="https://www.richardmille.com/" target="_blank" style="color:#b08d57; text-decoration: none; font-weight: bold;">Richard Mille</a> for setting the gold standard in modern watchmaking.
+      This viewer pays tribute to the innovation and luxury their watches represent.
+    </p>
 
+    <div class="viewer-container">
+      <div id="viewer"></div>
+      <div id="position-indicator"></div>
+      <div id="loading">Loading Watch...</div>
+    </div>
 
-  <div class="viewer-container">
-    <div id="viewer"></div>
-    <div id="position-indicator"></div>
-    <div id="loading">Loading Watch...</div>
-  </div>
-
-  <div class="navigation-bar">
-    <div class="navigation-handle"></div>
-  </div>
+    <div class="navigation-bar">
+      <div class="navigation-handle"></div>
+    </div>
+  </main>
 
   <script>
     const TOTAL_FRAMES = 28;
@@ -204,6 +188,7 @@ main {
     let startX = 0;
     let images = [];
     let lastRenderedFrame = -1;
+    let lastTouchX = null;
 
     init();
 
@@ -223,7 +208,7 @@ main {
             images[i - 1] = img;
             if (++loaded === TOTAL_FRAMES) resolve();
           };
-          img.onerror = () => console.error(`Missing: images/${IMAGE_PREFIX}${i}.${IMAGE_EXT}`);
+          img.onerror = () => console.error(`Missing: ${IMAGE_PREFIX}${i}.${IMAGE_EXT}`);
           img.src = `${IMAGE_PREFIX}${i}.${IMAGE_EXT}`;
         }
       });
@@ -279,13 +264,22 @@ main {
     document.addEventListener('mousemove', (e) => handleMove(e.clientX));
     document.addEventListener('mouseup', handleEnd);
 
-  viewer.addEventListener('touchstart', (e) => {
-  handleStart(e.touches[0].clientX);
-}, { passive: true });
+    viewer.addEventListener('touchstart', (e) => {
+      lastTouchX = e.touches[0].clientX;
+      handleStart(lastTouchX);
+    }, { passive: true });
 
-document.addEventListener('touchmove', (e) => {
-  handleMove(e.touches[0].clientX);
-}, { passive: true });
+    document.addEventListener('touchmove', (e) => {
+      if (isDragging && e.touches.length === 1) {
+        const currentX = e.touches[0].clientX;
+        const dx = currentX - lastTouchX;
+
+        if (Math.abs(dx) > 5) {
+          handleMove(currentX);
+          lastTouchX = currentX;
+        }
+      }
+    }, { passive: true });
 
     document.addEventListener('touchend', handleEnd);
 
@@ -296,7 +290,5 @@ document.addEventListener('touchmove', (e) => {
       updateView();
     });
   </script>
-    </main>
 </body>
 </html>
-
